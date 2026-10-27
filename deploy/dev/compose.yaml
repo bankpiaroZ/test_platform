@@ -1,0 +1,92 @@
+# ชุด "dev server" — รอบซ้อมรันบน notebook ของ bankpiaroZ แทนเครื่องจริง
+# มี: keycloak (ตัวตน) · demo (web+api+postgres ตามตัวล่าสุดของ main) · postgres ฐานทดสอบต่อคน
+# ไม่มี: mssql · mysql (รอเครื่องจริง) · prod
+name: platform_dev
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    # โหมด dev เก็บข้อมูลในหน่วยความจำ (ไม่ mount volume — keycloak รันเป็น user ธรรมดา เขียน volume ของ root ไม่ได้)
+    # ทุกครั้งที่เปิดจะ import realm-dev.json ใหม่ ผู้ใช้ทดสอบ 3 คนกลับมาเหมือนเดิมเสมอ
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    ports:
+      - "8180:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  postgres-demo:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: platform_demo
+    volumes:
+      - demodata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d platform_demo"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  demo-api:
+    image: ${IMAGE_API:-ghcr.io/bankpiaroz/test_platform-api:main}
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql+psycopg://app:app@postgres-demo:5432/platform_demo
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      postgres-demo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  demo-web:
+    image: ${IMAGE_WEB:-ghcr.io/bankpiaroz/test_platform-web:main}
+    ports:
+      - "8081:80"
+    depends_on:
+      demo-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  # ฐานทดสอบ (ข้อมูลตัวอย่างที่ DQ จะไปตรวจ) — 1 database ต่อคน
+  postgres-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: demo_shared
+    volumes:
+      - ./postgres-test:/docker-entrypoint-initdb.d:ro
+      - testdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d demo_shared"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  demodata:
+  testdata:

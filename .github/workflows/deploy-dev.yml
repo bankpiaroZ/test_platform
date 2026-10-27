@@ -1,0 +1,55 @@
+# รวมเข้า main แล้ว: build image (บน GitHub) → เก็บที่ ghcr.io → runner ที่เครื่อง dev ดึงมาเปิด
+name: deploy-dev
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build + push api
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ghcr.io/bankpiaroz/test_platform-api:main
+            ghcr.io/bankpiaroz/test_platform-api:${{ github.sha }}
+      - name: build + push web
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          push: true
+          tags: |
+            ghcr.io/bankpiaroz/test_platform-web:main
+            ghcr.io/bankpiaroz/test_platform-web:${{ github.sha }}
+
+  deploy:
+    name: deploy to dev
+    needs: build
+    runs-on: [self-hosted, dev]
+    steps:
+      - uses: actions/checkout@v4
+      - name: login ghcr (ดึง image ได้แม้ package เป็น private)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: เปิดชุด dev ด้วย image ใหม่
+        working-directory: deploy/dev
+        run: |
+          docker compose pull demo-api demo-web
+          docker compose up -d --wait
+          docker compose ps
+      - name: ตรวจว่า demo ตอบ
+        run: curl -fsS http://localhost:8081/api/health

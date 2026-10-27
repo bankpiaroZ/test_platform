@@ -1,0 +1,6 @@
+# ทุกไฟล์ข้อความใช้บรรทัดจบแบบ LF เสมอ (ทีมมีทั้ง Windows/Mac และไฟล์ถูกรันใน Linux container)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.dump binary
