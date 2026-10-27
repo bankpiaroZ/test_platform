@@ -1,0 +1,10 @@
+# ของกลาง: PR ที่แตะ path เหล่านี้ต้องมีเจ้าของอนุมัติ 1 คน (GitHub บังคับผ่าน branch protection)
+# ของห้อง (api/app/modules/*, web/features/*) ไม่อยู่ในนี้ = CI เขียวแล้วรวมเองได้
+/api/app/core/        @bankpiaroZ @peerawanc
+/api/app/platform/    @bankpiaroZ @peerawanc
+/web/shared/          @bankpiaroZ @peerawanc
+/.github/             @bankpiaroZ
+/.claude/             @bankpiaroZ @peerawanc
+/docs/decisions/      @bankpiaroZ @peerawanc
+/api/pyproject.toml   @bankpiaroZ @peerawanc
+/compose.yaml         @bankpiaroZ @peerawanc

@@ -1,0 +1,63 @@
+# ชุด container บนเครื่องตัวเอง: web · api · postgres (+ worker เมื่อเปิด profile)
+# ฐานทดสอบ (mssql/mysql) และ keycloak อยู่บน dev server ไม่อยู่ในนี้
+name: test_platform
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    env_file: .env
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./api:/code
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  worker:
+    build: ./api
+    env_file: .env
+    command: python -m app.worker
+    volumes:
+      - ./api:/code
+    profiles: ["worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

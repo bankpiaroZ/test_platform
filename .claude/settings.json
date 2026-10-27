@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(just *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh run view*)",
+      "Bash(docker compose ps*)",
+      "Bash(docker compose logs*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr merge*)",
+      "Bash(ssh *)",
+      "Edit(api/app/core/**)",
+      "Edit(api/app/platform/**)",
+      "Edit(web/shared/**)",
+      "Edit(.github/**)",
+      "Edit(.claude/**)",
+      "Edit(api/pyproject.toml)",
+      "Edit(compose.yaml)",
+      "Write(api/app/core/**)",
+      "Write(api/app/platform/**)",
+      "Write(web/shared/**)",
+      "Write(.github/**)",
+      "Write(.claude/**)"
+    ],
+    "deny": [
+      "Bash(docker compose down -v*)",
+      "Bash(docker volume rm*)",
+      "Bash(pip install*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Edit(.env)",
+      "Read(.env)"
+    ]
+  }
+}

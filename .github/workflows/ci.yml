@@ -1,0 +1,62 @@
+# CI = just check ตัวเดียวกัน รันใน container เดียวกัน + ตรวจกติกา PR
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ตั้ง .env สำหรับ CI
+        run: |
+          cp .env.example .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=ci/' .env
+
+      - name: build image api
+        run: docker compose build api
+
+      - name: format
+        run: docker compose run --rm --no-deps api ruff format --check .
+
+      - name: lint
+        run: docker compose run --rm --no-deps api ruff check .
+
+      - name: import-linter (กำแพงชั้น/ห้อง)
+        run: docker compose run --rm --no-deps api lint-imports
+
+      - name: migration + เทสต์
+        run: docker compose run --rm api sh -c "alembic upgrade head && pytest -q"
+
+      - name: ตรวจคำอธิบาย PR กรอกครบ
+        if: github.event_name == 'pull_request'
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          for h in "## ทำอะไร" "## เพราะอะไร" "## ทดสอบอย่างไร" "## แตะของกลางไหม"; do
+            if ! grep -qF "$h" <<< "$BODY"; then echo "PR ขาดหัวข้อ: $h"; exit 1; fi
+          done
+          if grep -qE '_\(เขียนตรงนี้\)_' <<< "$BODY"; then echo "PR ยังมีช่องที่ไม่ได้กรอก"; exit 1; fi
+          echo "คำอธิบาย PR ครบ"
+
+      - name: แตะของกลางต้องมีป้าย decision
+        if: github.event_name == 'pull_request'
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          central=$(echo "$changed" | grep -E '^(api/app/core/|api/app/platform/|web/shared/|\.github/|\.claude/)' || true)
+          if [ -n "$central" ]; then
+            echo "แตะของกลาง:"; echo "$central"
+            if ! echo ",$LABELS," | grep -q ',decision,'; then
+              echo "ต้องติดป้าย 'decision' และมีไฟล์ใน docs/decisions/ อธิบายเหตุผล"; exit 1
+            fi
+          else
+            echo "ไม่แตะของกลาง"
+          fi
