@@ -58,4 +58,18 @@ docs/proposals/     ข้อเสนอ (ใครก็เขียนได�
 .claude/commands/   คำสั่งของ AI: /start /check /submit /fix-ci /review /propose
 ```
 
+## เครื่อง dev (รอบซ้อม = notebook ของ bankpiaroZ)
+
+อยู่ใน `deploy/dev/` ดู [docs/decisions/0001-dev-on-notebook.md](docs/decisions/0001-dev-on-notebook.md)
+
+| ที่อยู่ (แทน `<dev>` ด้วยชื่อเครื่องหรือ IP) | คืออะไร |
+|---|---|
+| http://`<dev>`:8081 | demo = ตัวล่าสุดของ main (ขึ้นเองเมื่อรวม PR) |
+| http://`<dev>`:8180 | Keycloak (admin / admin) realm `dev` · ผู้ใช้ทดสอบ somchai · somying · vendor1 รหัส test1234 |
+| `<dev>`:5434 | postgres ฐานทดสอบ user test/test · database demo_a · demo_b · demo_c (มีตาราง customer ตัวอย่าง) |
+| `<dev>`:5433 | postgres ของ demo (platform_demo) |
+
+เส้นทาง: รวม PR เข้า main → workflow `deploy-dev` build image บน GitHub เก็บที่ ghcr.io → runner บนเครื่อง dev ดึงมาเปิด
+ตั้งเครื่อง dev ครั้งแรก: `cd deploy/dev; copy .env.example .env; docker compose up -d --wait keycloak postgres-demo postgres-test` แล้วรัน `install-runner.ps1`
+
 กติกาละเอียดอยู่ใน [CLAUDE.md](CLAUDE.md)
