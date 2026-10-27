@@ -1,0 +1,55 @@
+{
+  "realm": "dev",
+  "displayName": "platform dev (ซ้อม)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginTheme": "keycloak",
+  "clients": [
+    {
+      "clientId": "platform",
+      "name": "platform web/api",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "dev-secret-not-for-prod",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:8080/*", "http://127.0.0.1:8080/*", "http://*:8081/*", "http://*:8080/*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect",
+      "attributes": { "post.logout.redirect.uris": "+" }
+    }
+  ],
+  "users": [
+    {
+      "username": "somchai",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "somchai@example.test",
+      "firstName": "สมชาย",
+      "lastName": "ทดสอบ",
+      "attributes": { "department": ["Data"], "employee_id": ["E001"] },
+      "credentials": [{ "type": "password", "value": "test1234", "temporary": false }]
+    },
+    {
+      "username": "somying",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "somying@example.test",
+      "firstName": "สมหญิง",
+      "lastName": "ทดสอบ",
+      "attributes": { "department": ["Finance"], "employee_id": ["E002"] },
+      "credentials": [{ "type": "password", "value": "test1234", "temporary": false }]
+    },
+    {
+      "username": "vendor1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "vendor1@outside.test",
+      "firstName": "ผู้ใช้",
+      "lastName": "ภายนอก",
+      "attributes": { "department": ["External"] },
+      "credentials": [{ "type": "password", "value": "test1234", "temporary": false }]
+    }
+  ]
+}
