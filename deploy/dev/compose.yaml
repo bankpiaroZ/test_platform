@@ -43,6 +43,10 @@ services:
 
   demo-api:
     image: ${IMAGE_API:-ghcr.io/bankpiaroz/test_platform-api:main}
+    # nginx ใน image web ชี้ไปที่ชื่อ "api" (ตาม compose.yaml ของนักพัฒนา) ชุดนี้ชื่อ demo-api จึงต้องมีชื่อเล่น api ใน network
+    networks:
+      default:
+        aliases: [api]
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql+psycopg://app:app@postgres-demo:5432/platform_demo
