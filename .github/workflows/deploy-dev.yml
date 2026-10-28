@@ -43,8 +43,12 @@ jobs:
     runs-on: [self-hosted, dev]
     steps:
       - uses: actions/checkout@v4
-      - name: login ghcr (ดึง image ได้แม้ package เป็น private)
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      # ใช้ action เดียวกับ job build ไม่ใช้ echo | docker login เพราะ Windows PowerShell 5.1 แอบใส่ BOM หน้า token → ghcr ตอบ denied
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: เปิดชุด dev ด้วย image ใหม่
         working-directory: deploy/dev
         run: |
@@ -52,4 +56,5 @@ jobs:
           docker compose up -d --wait
           docker compose ps
       - name: ตรวจว่า demo ตอบ
-        run: curl -fsS http://localhost:8081/api/health
+        # curl.exe เต็มชื่อ เพราะใน PowerShell คำว่า curl เป็นชื่อเล่นของ Invoke-WebRequest ซึ่งไม่รู้จัก -fsS
+        run: curl.exe -fsS http://localhost:8081/api/health

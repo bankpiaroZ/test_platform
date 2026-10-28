@@ -1,4 +1,4 @@
-# ติดตั้ง runner ของ GitHub บนเครื่อง dev (รอบซ้อม = notebook) — รันครั้งเดียวด้วย PowerShell
+﻿# ติดตั้ง runner ของ GitHub บนเครื่อง dev (รอบซ้อม = notebook) — รันครั้งเดียวด้วย PowerShell
 # ทำอะไร: ดาวน์โหลดโปรแกรม runner · ลงทะเบียนกับ repo ติดป้าย "dev" · เปิดให้รอรับงาน · ตั้งให้เปิดเองทุกครั้งที่ login
 # ทำเพื่อ: ให้ workflow deploy-dev สั่ง "ดึง image ใหม่แล้วเปิด" บนเครื่องนี้ได้ โดยไม่ต้องเปิดพอร์ตจากข้างนอกเข้ามา
 #         (runner เป็นฝ่ายต่อออกไปหา GitHub เอง)
@@ -35,5 +35,6 @@ Register-ScheduledTask -TaskName "github-runner-dev" -Action $action -Trigger $t
 
 Start-Sleep 8
 Write-Host "สถานะ runner ที่ GitHub เห็น:"
-gh api "repos/$repo/actions/runners" --jq '.runners[] | "\(.name)  \(.status)  labels=\([.labels[].name] | join(","))"'
+# jq ต้องไม่มีเครื่องหมายคำพูดซ้อน — PowerShell 5.1 ส่งต่อให้ gh แล้วแตกเป็นหลาย argument
+gh api "repos/$repo/actions/runners" --jq '.runners[] | [.name, .status] + [.labels[].name] | @tsv'
 Write-Host "ถอนทีหลัง: cd $dir; .\config.cmd remove --token (gh api -X POST repos/$repo/actions/runners/remove-token --jq .token); Unregister-ScheduledTask github-runner-dev -Confirm:`$false"
